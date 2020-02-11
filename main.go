@@ -2,15 +2,24 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	_ "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	. "github.com/ethereum/go-ethereum/ethclient"
 )
+
+func base64Encode(input []byte) []byte {
+	b64 := make([]byte, base64.StdEncoding.EncodedLen(len(input)))
+	base64.StdEncoding.Encode(b64, input)
+
+	return b64
+}
 
 func main() {
 	client := ConnectClient("https://rinkeby.infura.io/v3/8e2834b158fa48b0a5fb9ca0f72ce6e6")
@@ -32,7 +41,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println(block.Hash().Hex())
+	fmt.Printf("-----------\nBlock Hash: %s\n", block.Hash().Hex())
+	fmt.Printf("Block timestamp : %s\n-----------\n", block.ReceivedAt)
 
 	for _, tx := range block.Transactions() {
 		fmt.Printf("TX Hash: %s\n", tx.Hash().Hex())
@@ -42,6 +52,13 @@ func main() {
 		fmt.Printf("TX Nonce: %d\n", tx.Nonce())
 		//fmt.Printf("TX Data: %v\n", tx.Data())
 		fmt.Printf("TX To: %s\n", tx.To().Hex())
+
+		msg, err := tx.AsMessage(types.NewEIP155Signer(tx.ChainId()))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Printf("TX From : %s\n", msg.From().Hex())
 
 		receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
 		if err != nil {
