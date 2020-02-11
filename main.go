@@ -26,11 +26,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Block time: " + block.Time().String())
+	fmt.Println("Block time: " + string(block.Time()))
 }
 
 // Connexion à un noeud geth Rinkeby via Infura
-func ConnectClient(string url) *Client {
+func ConnectClient(url string) *Client {
 	var client, err = ethclient.Dial(url) //"rinkeby.infura.io/v3/8e2834b158fa48b0a5fb9ca0f72ce6e6"
 	if err != nil {
 		fmt.Println("Error while connecting to infura")
