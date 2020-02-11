@@ -14,17 +14,16 @@ import (
 	. "github.com/ethereum/go-ethereum/ethclient"
 )
 
-func base64Encode(input []byte) []byte {
-	b64 := make([]byte, base64.StdEncoding.EncodedLen(len(input)))
-	base64.StdEncoding.Encode(b64, input)
-
-	return b64
-}
-
 type personAndRelations struct {
 	person common.Address
-	relations []common.Address
+	relations []relationAndWeight
 }
+
+type relationAndWeight struct {
+	relation common.Address
+	weight uint64
+}
+
 
 func main() {
 	client := ConnectClient("https://rinkeby.infura.io/v3/8e2834b158fa48b0a5fb9ca0f72ce6e6")
@@ -119,4 +118,11 @@ func ConnectClient(url string) *Client {
 		log.Fatal(err)
 	}
 	return client
+}
+
+func base64Encode(input []byte) []byte {
+	b64 := make([]byte, base64.StdEncoding.EncodedLen(len(input)))
+	base64.StdEncoding.Encode(b64, input)
+
+	return b64
 }
