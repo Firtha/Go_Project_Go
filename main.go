@@ -21,6 +21,11 @@ func base64Encode(input []byte) []byte {
 	return b64
 }
 
+type personAndRelations struct {
+	person common.Address
+	relations []common.Address
+}
+
 func main() {
 	client := ConnectClient("https://rinkeby.infura.io/v3/8e2834b158fa48b0a5fb9ca0f72ce6e6")
 
