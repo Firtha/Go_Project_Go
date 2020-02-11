@@ -50,9 +50,19 @@ func main() {
 		fmt.Printf("TX Gas: %d\n", tx.Gas())
 		fmt.Printf("TX Gas Price: %d\n", tx.GasPrice().Uint64())
 		fmt.Printf("TX Nonce: %d\n", tx.Nonce())
-		//fmt.Printf("TX Data: %v\n", tx.Data())
 		fmt.Printf("TX To: %s\n", tx.To().Hex())
 
+		// Doc : https://github.com/ethereum/go-ethereum/blob/master/core/types/transaction.go
+		// type Message struct {
+		// 	to         *common.Address
+		// 	from       common.Address
+		// 	nonce      uint64
+		// 	amount     *big.Int
+		// 	gasLimit   uint64
+		// 	gasPrice   *big.Int
+		// 	data       []byte
+		// 	checkNonce bool
+		// }
 		msg, err := tx.AsMessage(types.NewEIP155Signer(tx.ChainId()))
 		if err != nil {
 			log.Fatal(err)
