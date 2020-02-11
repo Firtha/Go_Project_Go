@@ -37,77 +37,92 @@ func main() {
 	blockNumber := header.Number.String()
 	fmt.Println(blockNumber)
 
-	blockTest := big.NewInt(5952590)
+	//
+	// Request to API to know the last block index scanned
+	//
+
+	blockIndex := 0
+	blockTest := big.NewInt(int64(blockIndex))
 	fmt.Println(blockTest)
 
-	block, err := client.BlockByNumber(context.Background(), blockTest)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("-----------\nBlock Hash: %s\n", block.Hash().Hex())
-	fmt.Printf("Block timestamp : %s\n-----------\n", block.ReceivedAt)
-
-	for _, tx := range block.Transactions() {
-		fmt.Printf("TX Hash: %s\n", tx.Hash().Hex())
-		fmt.Printf("TX Value: %s\n", tx.Value().String())
-		fmt.Printf("TX Gas: %d\n", tx.Gas())
-		fmt.Printf("TX Gas Price: %d\n", tx.GasPrice().Uint64())
-		fmt.Printf("TX Nonce: %d\n", tx.Nonce())
-		fmt.Printf("TX To: %s\n", tx.To().Hex())
-
-		// Doc : https://github.com/ethereum/go-ethereum/blob/master/core/types/transaction.go
-		// type Message struct {
-		// 	to         *common.Address
-		// 	from       common.Address
-		// 	nonce      uint64
-		// 	amount     *big.Int
-		// 	gasLimit   uint64
-		// 	gasPrice   *big.Int
-		// 	data       []byte
-		// 	checkNonce bool
-		// }
-		msg, err := tx.AsMessage(types.NewEIP155Signer(tx.ChainId()))
+	for {
+		block, err := client.BlockByNumber(context.Background(), blockTest)
 		if err != nil {
 			log.Fatal(err)
+			break
 		}
 
-		fmt.Printf("TX From : %s\n", msg.From().Hex())
+		fmt.Printf("---------------------------------\nBlock Number: %d\n", blockIndex)
+		fmt.Printf("Block Hash: %s\n", block.Hash().Hex())
+		fmt.Printf("Block timestamp : %s\n---------------------------------\n", block.ReceivedAt)
 
-		receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
-		if err != nil {
-			log.Fatal(err)
+		for _, tx := range block.Transactions() {
+			fmt.Printf("TX Hash: %s\n", tx.Hash().Hex())
+			fmt.Printf("TX Value: %s\n", tx.Value().String())
+			fmt.Printf("TX Gas: %d\n", tx.Gas())
+			fmt.Printf("TX Gas Price: %d\n", tx.GasPrice().Uint64())
+			fmt.Printf("TX Nonce: %d\n", tx.Nonce())
+			fmt.Printf("TX To: %s\n", tx.To().Hex())
+
+			//
+			// Request to API to insert the From and To Address
+			//
+
+			// Doc : https://github.com/ethereum/go-ethereum/blob/master/core/types/transaction.go
+			// type Message struct {
+			// 	to         *common.Address
+			// 	from       common.Address
+			// 	nonce      uint64
+			// 	amount     *big.Int
+			// 	gasLimit   uint64
+			// 	gasPrice   *big.Int
+			// 	data       []byte
+			// 	checkNonce bool
+			// }
+			msg, err := tx.AsMessage(types.NewEIP155Signer(tx.ChainId()))
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Printf("TX From : %s\n", msg.From().Hex())
+
+			receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Printf("Receipt Status: %d\n", receipt.Status)
+			fmt.Println("---------------------------------")
 		}
 
-		fmt.Printf("Receipt Status: %d\n", receipt.Status)
-		fmt.Println("---")
+		// Grab block by hash then iterate over transactions by index
+		//blockHash := common.HexToHash("0x01e6b1caed7765220448df0979018f5613728ff1273f5de2f137393f4d583e5e")
+		//count, err := client.TransactionCount(context.Background(), blockHash)
+		//if err != nil {
+		//	log.Fatal(err)
+		//}
+
+		//for idx := uint(0); idx < count; idx++ {
+		//	tx, err := client.TransactionInBlock(context.Background(), blockHash, idx)
+		//	if err != nil {
+		//		log.Fatal(err)
+		//	}
+
+		//	fmt.Printf("TX Hash: %s\n", tx.Hash().Hex())
+		//}
+
+		// Grab a transaction by it's individual hash
+		///txHash := common.HexToHash("0xa9a42eefa76655e5298996813138e6c33fac6f89506ae233c2f0b7a4e699ed68")
+		//tx, isPending, err := client.TransactionByHash(context.Background(), txHash)
+		//if err != nil {
+		//	log.Fatal(err)
+		//}
+
+		//fmt.Printf("TX Hash: %s\n", tx.Hash().Hex())
+		//fmt.Printf("Pending?: %v\n", isPending)
+
+		blockIndex++
 	}
-
-	// Grab block by hash then iterate over transactions by index
-	blockHash := common.HexToHash("0x01e6b1caed7765220448df0979018f5613728ff1273f5de2f137393f4d583e5e")
-	count, err := client.TransactionCount(context.Background(), blockHash)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for idx := uint(0); idx < count; idx++ {
-		tx, err := client.TransactionInBlock(context.Background(), blockHash, idx)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Printf("TX Hash: %s\n", tx.Hash().Hex())
-	}
-
-	// Grab a transaction by it's individual hash
-	txHash := common.HexToHash("0xa9a42eefa76655e5298996813138e6c33fac6f89506ae233c2f0b7a4e699ed68")
-	tx, isPending, err := client.TransactionByHash(context.Background(), txHash)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("TX Hash: %s\n", tx.Hash().Hex())
-	fmt.Printf("Pending?: %v\n", isPending)
 }
 
 // Connexion à un noeud geth Rinkeby via Infura
