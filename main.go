@@ -4,16 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
+	// "time"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	. "github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/bson"
+	// "go.mongodb.org/mongo-driver/mongo"
+	// "go.mongodb.org/mongo-driver/mongo/options"
+	// "go.mongodb.org/mongo-driver/bson"
 )
 
 type blockIndexMngmt struct {
@@ -34,21 +34,22 @@ type txContent struct {
 func main() {
 	client := ConnectClient("https://rinkeby.infura.io/v3/8e2834b158fa48b0a5fb9ca0f72ce6e6")
 
-	// Mongo Connection to DB
-	clientOptions := options.Client().ApplyURI("mongodb://mongodb:27017")
-	clientMongo, err := mongo.Connect(context.TODO(), clientOptions)
+	// >>> START saving Mongo Connection to DB
+	// clientOptions := options.Client().ApplyURI("mongodb://mongodb:27017")
+	// clientMongo, err := mongo.Connect(context.TODO(), clientOptions)
 
-	if err != nil {
-		log.Fatal(err)
-	}
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
-	err = clientMongo.Ping(context.TODO(), nil)
+	// err = clientMongo.Ping(context.TODO(), nil)
 
-	if err != nil {
-		fmt.Println("Connect to MongoDB failed !")
-		log.Fatal(err)
-	}
-	fmt.Println("blockIndex : Connected to MongoDB!")
+	// if err != nil {
+	// 	fmt.Println("Connect to MongoDB failed !")
+	// 	log.Fatal(err)
+	// }
+	// fmt.Println("blockIndex : Connected to MongoDB!")
+	// >>> END saving Mongo Connection to DB
 
 	//
 	// Request to API to know the last block index scanned
@@ -57,25 +58,26 @@ func main() {
 	//			then get associated to_block
 	//			set blockIndex = to_block + 1
 	//
-	// Mongo get block index
-	filter := bson.D{} // Default filter hould become maxID or maxTimestamp
-	var resultIndex blockIndexMngmt
+	// >>> START Mongo get block starting index
+	// filter := bson.D{} // Default filter hould become maxID or maxTimestamp
+	// var resultIndex blockIndexMngmt
 
-	collectionBlock := clientMongo.Database("mydb").Collection("blockIndex")
-	err = collectionBlock.FindOne(context.TODO(), filter).Decode(&resultIndex)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// collectionBlock := clientMongo.Database("mydb").Collection("blockIndex")
+	// err = collectionBlock.FindOne(context.TODO(), filter).Decode(&resultIndex)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
-	fmt.Printf("Found a single document: %+v\n", resultIndex)
+	// fmt.Printf("Found a single document: %+v\n", resultIndex)
 
-	findOptions := options.Find()
-	findOptions.SetLimit(1)
+	// findOptions := options.Find()
+	// findOptions.SetLimit(1)
+	// >>> END Mongo get block starting index
 
 	startBlockIndex := 5954000
 	// startBlockIndex = resultIndex.to_block + 1
 
-	currInputID := 0
+	// currInputID := 0
 	// currInputID := resultIndex.input_ID + 1
 
 	blockIndex := startBlockIndex
@@ -132,15 +134,17 @@ func main() {
 			// Request to API to insert the From and To Address
 			// Table UserRelations { ID (auto_inc) ; from_Addr ; to_Addr ; ID_input (same value than current scan in Table blockIndexation) }
 			//
-			collectionTx := clientMongo.Database("mydb").Collection("txData")
+			// >>> START current txData saving
+			// collectionTx := clientMongo.Database("mydb").Collection("txData")
 
-			currTx := txContent{string(msg.From().Hex()), string(tx.To().Hex()), uint(currInputID), tx.Hash().Hex(), uint(blockIndex)}
+			// currTx := txContent{string(msg.From().Hex()), string(tx.To().Hex()), uint(currInputID), tx.Hash().Hex(), uint(blockIndex)}
 
-			insertResult, err := collectionTx.InsertOne(context.TODO(), currTx)
-			if err != nil {
-				log.Fatal(err)
-			}
-			fmt.Println("txData : Insert success with ID: ", insertResult.InsertedID)
+			// insertResult, err := collectionTx.InsertOne(context.TODO(), currTx)
+			// if err != nil {
+			// 	log.Fatal(err)
+			// }
+			// fmt.Println("txData : Insert success with ID: ", insertResult.InsertedID)
+			// >>> END current txData saving
 		}
 
 		blockIndex++
@@ -151,17 +155,19 @@ func main() {
 	// Table blockIndexation { ID (auto inc) ; timestamp ; input_ID (auto inc) ; from_block ; to_block }
 	//	Insert : currTime ; from_block = startBlockIndex ; to_block = blockIndex
 	//
-	currTimestamp := time.Now().Format(time.RFC3339)
+	// >>> START save last block index scanned
+	// currTimestamp := time.Now().Format(time.RFC3339)
 
-	collectionTx := clientMongo.Database("mydb").Collection("blockIndex")
+	// collectionTx := clientMongo.Database("mydb").Collection("blockIndex")
 
-	finalIndex := blockIndexMngmt{currTimestamp, uint(currInputID), uint(startBlockIndex), uint(blockIndex)}
+	// finalIndex := blockIndexMngmt{currTimestamp, uint(currInputID), uint(startBlockIndex), uint(blockIndex)}
 
-	insertResult, err := collectionTx.InsertOne(context.TODO(), finalIndex)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("blockIndex : Insert success with ID: ", insertResult.InsertedID)
+	// insertResult, err := collectionTx.InsertOne(context.TODO(), finalIndex)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// fmt.Println("blockIndex : Insert success with ID: ", insertResult.InsertedID)
+	// >>> END save last block index scanned
 }
 
 // Connexion à un noeud geth Rinkeby via Infura
