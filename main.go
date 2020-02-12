@@ -2,13 +2,10 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"log"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
-	_ "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	. "github.com/ethereum/go-ethereum/ethclient"
@@ -122,11 +119,4 @@ func ConnectClient(url string) *Client {
 		log.Fatal(err)
 	}
 	return client
-}
-
-func base64Encode(input []byte) []byte {
-	b64 := make([]byte, base64.StdEncoding.EncodedLen(len(input)))
-	base64.StdEncoding.Encode(b64, input)
-
-	return b64
 }
