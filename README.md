@@ -1,5 +1,5 @@
 # Go_Project_Go
-Go Repo of the project
+Go Repo of the ESGI Go project - Delivered the 12/02/2020
 
 ## Process of the code
 The Go code will parse all the blocks of the blockchain Ethereum - Rinkeby, based on infura.io API.
