@@ -4,37 +4,37 @@ import (
 	"context"
 	"fmt"
 	"log"
+
 	// "time"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	. "github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/core/types"
-
 	// "go.mongodb.org/mongo-driver/mongo"
 	// "go.mongodb.org/mongo-driver/mongo/options"
 	// "go.mongodb.org/mongo-driver/bson"
 )
 
 type blockIndexMngmt struct {
-	timestamp string
-	input_ID uint
+	timestamp  string
+	input_ID   uint
 	from_block uint
-	to_block uint
+	to_block   uint
 }
 
 type txContent struct {
-	from_Addr string
-	to_Addr string
-	input_ID uint
-	txHash string
+	from_Addr   string
+	to_Addr     string
+	input_ID    uint
+	txHash      string
 	blockNumber uint
 }
 
 func main() {
 	client := ConnectClient("https://rinkeby.infura.io/v3/8e2834b158fa48b0a5fb9ca0f72ce6e6")
 
-	// >>> START saving Mongo Connection to DB
+	// >>> START Mongo Connection to DB
 	// clientOptions := options.Client().ApplyURI("mongodb://mongodb:27017")
 	// clientMongo, err := mongo.Connect(context.TODO(), clientOptions)
 
@@ -49,7 +49,7 @@ func main() {
 	// 	log.Fatal(err)
 	// }
 	// fmt.Println("blockIndex : Connected to MongoDB!")
-	// >>> END saving Mongo Connection to DB
+	// >>> END Mongo Connection to DB
 
 	//
 	// Request to API to know the last block index scanned
@@ -86,7 +86,7 @@ func main() {
 		blockTest := big.NewInt(int64(blockIndex))
 		block, err := client.BlockByNumber(context.Background(), blockTest)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Printf("Last existing block was at index %d.\nScan ended.\n", blockIndex)
 			break
 		}
 
@@ -127,7 +127,6 @@ func main() {
 
 			fmt.Printf("Receipt Status: %d\n", receipt.Status)
 			fmt.Println("---------------------------------")
-
 
 			//
 			// Request to API to insert the From and To Address
