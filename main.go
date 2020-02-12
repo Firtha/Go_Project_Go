@@ -81,10 +81,9 @@ func main() {
 	// currInputID := resultIndex.input_ID + 1
 
 	blockIndex := startBlockIndex
-	blockTest := big.NewInt(int64(blockIndex))
-	fmt.Println(blockTest)
 
 	for {
+		blockTest := big.NewInt(int64(blockIndex))
 		block, err := client.BlockByNumber(context.Background(), blockTest)
 		if err != nil {
 			log.Fatal(err)
