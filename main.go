@@ -4,30 +4,81 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	. "github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/core/types"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/bson"
 )
+
+type blockIndexMngmt struct {
+	timestamp string
+	input_ID uint
+	from_block uint
+	to_block uint
+}
+
+type txContent struct {
+	from_Addr string
+	to_Addr string
+	input_ID uint
+	txHash string
+	blockNumber uint
+}
 
 func main() {
 	client := ConnectClient("https://rinkeby.infura.io/v3/8e2834b158fa48b0a5fb9ca0f72ce6e6")
 
-	// Get Block Number
-	header, err := client.HeaderByNumber(context.Background(), nil)
+	// Mongo Connection to DB
+	clientOptions := options.Client().ApplyURI("mongodb://mongodb:27017")
+	clientMongo, err := mongo.Connect(context.TODO(), clientOptions)
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	blockNumber := header.Number.String()
-	fmt.Println(blockNumber)
+	err = clientMongo.Ping(context.TODO(), nil)
+
+	if err != nil {
+		fmt.Println("Connect to MongoDB failed !")
+		log.Fatal(err)
+	}
+	fmt.Println("blockIndex : Connected to MongoDB!")
 
 	//
 	// Request to API to know the last block index scanned
+	// Table blockIndexation { ID (auto inc) ; timestamp ; input_ID (auto inc) ; from_block ; to_block }
+	//	Process : get newest timestamp (or max ID if auto inc)
+	//			then get associated to_block
+	//			set blockIndex = to_block + 1
 	//
+	// Mongo get block index
+	filter := bson.D{} // Default filter hould become maxID or maxTimestamp
+	var resultIndex blockIndexMngmt
 
-	blockIndex := 5954000
+	collectionBlock := clientMongo.Database("mydb").Collection("blockIndex")
+	err = collectionBlock.FindOne(context.TODO(), filter).Decode(&resultIndex)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Found a single document: %+v\n", resultIndex)
+
+	findOptions := options.Find()
+	findOptions.SetLimit(1)
+
+	startBlockIndex := 5954000
+	// startBlockIndex = resultIndex.to_block + 1
+
+	currInputID := 0
+	// currInputID := resultIndex.input_ID + 1
+
+	blockIndex := startBlockIndex
 	blockTest := big.NewInt(int64(blockIndex))
 	fmt.Println(blockTest)
 
@@ -49,10 +100,6 @@ func main() {
 			fmt.Printf("TX Gas Price: %d\n", tx.GasPrice().Uint64())
 			fmt.Printf("TX Nonce: %d\n", tx.Nonce())
 			fmt.Printf("TX To: %s\n", tx.To().Hex())
-
-			//
-			// Request to API to insert the From and To Address
-			//
 
 			// Doc : https://github.com/ethereum/go-ethereum/blob/master/core/types/transaction.go
 			// type Message struct {
@@ -79,36 +126,42 @@ func main() {
 
 			fmt.Printf("Receipt Status: %d\n", receipt.Status)
 			fmt.Println("---------------------------------")
+
+
+			//
+			// Request to API to insert the From and To Address
+			// Table UserRelations { ID (auto_inc) ; from_Addr ; to_Addr ; ID_input (same value than current scan in Table blockIndexation) }
+			//
+			collectionTx := clientMongo.Database("mydb").Collection("txData")
+
+			currTx := txContent{string(msg.From().Hex()), string(tx.To().Hex()), uint(currInputID), tx.Hash().Hex(), uint(blockIndex)}
+
+			insertResult, err := collectionTx.InsertOne(context.TODO(), currTx)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println("txData : Insert success with ID: ", insertResult.InsertedID)
 		}
-
-		// Grab block by hash then iterate over transactions by index
-		//blockHash := common.HexToHash("0x01e6b1caed7765220448df0979018f5613728ff1273f5de2f137393f4d583e5e")
-		//count, err := client.TransactionCount(context.Background(), blockHash)
-		//if err != nil {
-		//	log.Fatal(err)
-		//}
-
-		//for idx := uint(0); idx < count; idx++ {
-		//	tx, err := client.TransactionInBlock(context.Background(), blockHash, idx)
-		//	if err != nil {
-		//		log.Fatal(err)
-		//	}
-
-		//	fmt.Printf("TX Hash: %s\n", tx.Hash().Hex())
-		//}
-
-		// Grab a transaction by it's individual hash
-		///txHash := common.HexToHash("0xa9a42eefa76655e5298996813138e6c33fac6f89506ae233c2f0b7a4e699ed68")
-		//tx, isPending, err := client.TransactionByHash(context.Background(), txHash)
-		//if err != nil {
-		//	log.Fatal(err)
-		//}
-
-		//fmt.Printf("TX Hash: %s\n", tx.Hash().Hex())
-		//fmt.Printf("Pending?: %v\n", isPending)
 
 		blockIndex++
 	}
+
+	//
+	// Request to API to save the last block index scanned
+	// Table blockIndexation { ID (auto inc) ; timestamp ; input_ID (auto inc) ; from_block ; to_block }
+	//	Insert : currTime ; from_block = startBlockIndex ; to_block = blockIndex
+	//
+	currTimestamp := time.Now().Format(time.RFC3339)
+
+	collectionTx := clientMongo.Database("mydb").Collection("blockIndex")
+
+	finalIndex := blockIndexMngmt{currTimestamp, uint(currInputID), uint(startBlockIndex), uint(blockIndex)}
+
+	insertResult, err := collectionTx.InsertOne(context.TODO(), finalIndex)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("blockIndex : Insert success with ID: ", insertResult.InsertedID)
 }
 
 // Connexion à un noeud geth Rinkeby via Infura
