@@ -41,7 +41,7 @@ func main() {
 	// Request to API to know the last block index scanned
 	//
 
-	blockIndex := 0
+	blockIndex := 5954000
 	blockTest := big.NewInt(int64(blockIndex))
 	fmt.Println(blockTest)
 
@@ -58,7 +58,7 @@ func main() {
 
 		for _, tx := range block.Transactions() {
 			fmt.Printf("TX Hash: %s\n", tx.Hash().Hex())
-			fmt.Printf("TX Value: %s\n", tx.Value().String())
+			fmt.Printf("TX Value: %d\n", tx.Value())
 			fmt.Printf("TX Gas: %d\n", tx.Gas())
 			fmt.Printf("TX Gas Price: %d\n", tx.GasPrice().Uint64())
 			fmt.Printf("TX Nonce: %d\n", tx.Nonce())
