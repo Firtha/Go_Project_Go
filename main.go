@@ -14,17 +14,6 @@ import (
 	. "github.com/ethereum/go-ethereum/ethclient"
 )
 
-type personAndRelations struct {
-	person common.Address
-	relations []relationAndWeight
-}
-
-type relationAndWeight struct {
-	relation common.Address
-	weight uint64
-}
-
-
 func main() {
 	client := ConnectClient("https://rinkeby.infura.io/v3/8e2834b158fa48b0a5fb9ca0f72ce6e6")
 
